@@ -1,0 +1,22 @@
+pipeline {
+  agent any
+  stages {
+    stage('SAST - SonarQube') {
+      steps { sh 'sonar-scanner' }
+    }
+    stage('SCA - Trivy Image Scan') {
+      steps { 
+        sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 myapp:latest'
+      }
+    }
+    stage('IaC Scan - Checkov') {
+      steps { sh 'checkov -d . --framework terraform' }
+    }
+    stage('Docker Build') {
+      steps { sh 'docker build -t myapp:latest --no-cache .' }
+    }
+    stage('Deploy to EKS via Helm') {
+      steps { sh 'helm upgrade --install myapp ./helm-chart' }
+    }
+  }
+}
